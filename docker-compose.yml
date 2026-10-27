@@ -1,0 +1,83 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: 93zrt_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: wordpress
+      MYSQL_ROOT_PASSWORD: rootpassword
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - 93zrt_net
+
+  wordpress:
+    image: wordpress:latest
+    container_name: 93zrt_wp
+    depends_on:
+      - db
+    restart: unless-stopped
+    ports:
+      - "8090:80"
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+    volumes:
+      - wp_data:/var/www/html
+      - ./theme-93zrt:/var/www/html/wp-content/themes/theme-93zrt
+      - ./mu-plugins:/var/www/html/wp-content/mu-plugins
+    networks:
+      - 93zrt_net
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: 93zrt_mailhog
+    restart: unless-stopped
+    ports:
+      - "8025:8025"
+    networks:
+      - 93zrt_net
+
+  wpcli:
+    image: wordpress:cli
+    container_name: 93zrt_wpcli
+    depends_on:
+      - db
+      - wordpress
+    user: "33:33"
+    volumes:
+      - wp_data:/var/www/html
+      - ./theme-93zrt:/var/www/html/wp-content/themes/theme-93zrt
+      - ./mu-plugins:/var/www/html/wp-content/mu-plugins
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+    entrypoint: ["tail", "-f", "/dev/null"]
+    networks:
+      - 93zrt_net
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: 93zrt_pma
+    depends_on:
+      - db
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: db
+    networks:
+      - 93zrt_net
+
+volumes:
+  db_data:
+  wp_data:
+
+networks:
+  93zrt_net:
